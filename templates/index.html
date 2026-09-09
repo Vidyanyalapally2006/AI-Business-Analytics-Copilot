@@ -1,0 +1,2982 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>AI Business Analytics Copilot</title>
+
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Inter, Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
+            color: #172033;
+            line-height: 1.5;
+        }
+
+        /* =====================================================
+           TOP NAVIGATION
+        ===================================================== */
+
+        .navbar {
+            background: #111827;
+            color: white;
+            min-height: 72px;
+            padding: 0 4%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 11px;
+            background: #4f46e5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .brand h1 {
+            font-size: 19px;
+            font-weight: 700;
+        }
+
+        .brand p {
+            color: #9ca3af;
+            font-size: 11px;
+        }
+
+        .nav-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #d1d5db;
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+        }
+
+        /* =====================================================
+           HERO
+        ===================================================== */
+
+        .hero {
+            background: linear-gradient(
+                135deg,
+                #111827,
+                #1e1b4b
+            );
+            color: white;
+            padding: 42px 5%;
+        }
+
+        .hero-content {
+            max-width: 1500px;
+            margin: auto;
+        }
+
+        .hero h2 {
+            font-size: 31px;
+            margin-bottom: 9px;
+        }
+
+        .hero p {
+            max-width: 700px;
+            color: #cbd5e1;
+            font-size: 14px;
+        }
+
+        .hero-badges {
+            margin-top: 18px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .badge {
+            background: rgba(255,255,255,0.09);
+            border: 1px solid rgba(255,255,255,0.13);
+            color: #e5e7eb;
+            padding: 6px 11px;
+            border-radius: 20px;
+            font-size: 11px;
+        }
+
+        /* =====================================================
+           MAIN CONTAINER
+        ===================================================== */
+
+        .container {
+            width: 92%;
+            max-width: 1500px;
+            margin: 28px auto 50px;
+        }
+
+        /* =====================================================
+           SECTION
+        ===================================================== */
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section-heading {
+            margin-bottom: 13px;
+        }
+
+        .section-heading h2 {
+            font-size: 20px;
+            color: #111827;
+        }
+
+        .section-heading p {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        /* =====================================================
+           UPLOAD CARD
+        ===================================================== */
+
+        .upload-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 18px rgba(15,23,42,0.04);
+        }
+
+        .upload-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 25px;
+        }
+
+        .upload-text {
+            flex: 1;
+        }
+
+        .upload-text h3 {
+            font-size: 18px;
+            margin-bottom: 6px;
+        }
+
+        .upload-text p {
+            color: #64748b;
+            font-size: 13px;
+            max-width: 650px;
+        }
+
+        .upload-box {
+            min-width: 400px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 18px;
+            background: #f8fafc;
+            text-align: center;
+        }
+
+        .upload-box input {
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .upload-box small {
+            display: block;
+            color: #94a3b8;
+            font-size: 11px;
+            margin-top: 8px;
+        }
+
+        .upload-btn {
+            width: 100%;
+            background: #4f46e5;
+        }
+
+        .upload-status {
+            display: none;
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .upload-success {
+            display: block;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            color: #047857;
+        }
+
+        .upload-error {
+            display: block;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+        }
+
+        /* =====================================================
+           FILTER CARD
+        ===================================================== */
+
+        .filter-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 4px 18px rgba(15,23,42,0.04);
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        select,
+        input {
+            padding: 11px 13px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: white;
+            color: #1f2937;
+            font-size: 13px;
+            outline: none;
+        }
+
+        select:focus,
+        input:focus {
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79,70,229,0.08);
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 11px 17px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            color: white;
+            background: #4f46e5;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            opacity: 0.94;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .reset-btn {
+            background: #64748b;
+        }
+
+        /* =====================================================
+           KPI GRID
+        ===================================================== */
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .kpi-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 13px;
+            padding: 18px;
+            box-shadow: 0 4px 18px rgba(15,23,42,0.035);
+            transition: 0.2s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 22px rgba(15,23,42,0.08);
+        }
+
+        .kpi-label {
+            color: #64748b;
+            font-size: 12px;
+            margin-bottom: 7px;
+        }
+
+        .kpi-value {
+            color: #111827;
+            font-size: 21px;
+            font-weight: 700;
+        }
+
+        .kpi-subtitle {
+            color: #94a3b8;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+
+        /* =====================================================
+           CHARTS
+        ===================================================== */
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+
+        .chart-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 4px 18px rgba(15,23,42,0.035);
+        }
+
+        .chart-card h3 {
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .chart-card p {
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        .chart {
+            width: 100%;
+            height: 350px;
+        }
+
+        /* =====================================================
+           AI COPILOT
+        ===================================================== */
+
+        .ai-card {
+            background: white;
+            border: 1px solid #ddd6fe;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 5px 22px rgba(79,70,229,0.06);
+        }
+
+        .ai-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 7px;
+        }
+
+        .ai-icon {
+            width: 40px;
+            height: 40px;
+            background: #eef2ff;
+            color: #4f46e5;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .ai-title h2 {
+            font-size: 21px;
+        }
+
+        .ai-description {
+            color: #64748b;
+            font-size: 13px;
+            margin-bottom: 18px;
+        }
+
+        .question-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        #questionInput {
+            flex: 1;
+        }
+
+        .ask-btn {
+            min-width: 110px;
+        }
+
+        .examples-title {
+            color: #64748b;
+            font-size: 11px;
+            margin: 14px 0 8px;
+        }
+
+        .examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+        }
+
+        .example {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            padding: 7px 10px;
+            border-radius: 18px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .example:hover {
+            background: #eef2ff;
+            color: #4338ca;
+        }
+
+        /* =====================================================
+           STATUS
+        ===================================================== */
+
+        #status {
+            display: none;
+            margin-top: 14px;
+            padding: 11px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #b91c1c;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #475569;
+        }
+
+        .spinner {
+            width: 15px;
+            height: 15px;
+            border: 2px solid #cbd5e1;
+            border-top-color: #4f46e5;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* =====================================================
+           AI RESULTS
+        ===================================================== */
+
+        #aiResult {
+            display: none;
+            margin-top: 25px;
+        }
+
+        .result-block {
+            margin-bottom: 23px;
+        }
+
+        .result-heading {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 9px;
+        }
+
+        .sql-box {
+            background: #0f172a;
+            color: #dbeafe;
+            padding: 16px;
+            border-radius: 9px;
+            font-family: Consolas, monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        /* =====================================================
+           RESULT TABLE
+        ===================================================== */
+
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #475569;
+            padding: 11px;
+            text-align: left;
+            font-size: 11px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        td {
+            padding: 11px;
+            font-size: 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* =====================================================
+           AI CHART
+        ===================================================== */
+
+        #aiChartContainer {
+            display: none;
+        }
+
+        #aiChart {
+            width: 100%;
+            height: 430px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+        }
+
+        /* =====================================================
+           INSIGHTS
+        ===================================================== */
+
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .insight-card {
+            background: #fff;
+            padding: 18px;
+            border-radius: 11px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .insight-card h3 {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .insight-card p {
+            color: #475569;
+            font-size: 12px;
+            line-height: 1.7;
+        }
+
+        .summary-card {
+            border-left: 4px solid #4f46e5;
+        }
+
+        .finding-card {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .recommendation-card {
+            border-left: 4px solid #10b981;
+        }
+
+        /* =====================================================
+           FOOTER
+        ===================================================== */
+
+        footer {
+            background: #111827;
+            color: #9ca3af;
+            text-align: center;
+            padding: 24px;
+            font-size: 11px;
+        }
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media (max-width: 1100px) {
+
+            .kpi-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .upload-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .upload-box {
+                min-width: 0;
+            }
+
+        }
+
+        @media (max-width: 800px) {
+
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .insight-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .question-row {
+                flex-direction: column;
+            }
+
+            .ask-btn {
+                width: 100%;
+            }
+
+        }
+
+        @media (max-width: 500px) {
+
+            .navbar {
+                padding: 12px 5%;
+            }
+
+            .nav-status {
+                display: none;
+            }
+
+            .hero {
+                padding: 30px 5%;
+            }
+
+            .hero h2 {
+                font-size: 24px;
+            }
+
+            .container {
+                width: 94%;
+            }
+
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters {
+                flex-direction: column;
+            }
+
+            .filters select,
+            .filters button {
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<!-- =========================================================
+     NAVIGATION
+========================================================= -->
+
+<nav class="navbar">
+
+    <div class="brand">
+
+        <div class="brand-icon">
+            AI
+        </div>
+
+        <div>
+
+            <h1>
+                Business Analytics Copilot
+            </h1>
+
+            <p>
+                AI-powered business intelligence
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="nav-status">
+
+        <span class="status-dot"></span>
+
+        Analytics Engine Active
+
+    </div>
+
+</nav>
+
+
+<!-- =========================================================
+     HERO
+========================================================= -->
+
+<section class="hero">
+
+    <div class="hero-content">
+
+        <h2>
+            Turn Business Data Into Decisions
+        </h2>
+
+        <p>
+            Upload your dataset, explore performance metrics,
+            ask questions in natural language, and receive
+            data-backed business recommendations.
+        </p>
+
+
+        <div class="hero-badges">
+
+            <span class="badge">
+                Python
+            </span>
+
+            <span class="badge">
+                Pandas
+            </span>
+
+            <span class="badge">
+                SQLite
+            </span>
+
+            <span class="badge">
+                SQL
+            </span>
+
+            <span class="badge">
+                Plotly
+            </span>
+
+            <span class="badge">
+                Gemini AI
+            </span>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<div class="container">
+
+
+<!-- =========================================================
+     UPLOAD DATASET
+========================================================= -->
+
+<section class="section">
+
+    <div class="section-heading">
+
+        <h2>
+            Data Source
+        </h2>
+
+        <p>
+            Connect your business dataset to the analytics engine.
+        </p>
+
+    </div>
+
+
+    <div class="upload-card">
+
+        <div class="upload-content">
+
+
+            <div class="upload-text">
+
+                <h3>
+                    Upload Business Dataset
+                </h3>
+
+                <p>
+                    Replace the current dataset with your own
+                    CSV or Excel business data. The system will
+                    validate, clean, store and analyze the data.
+                </p>
+
+            </div>
+
+
+            <div class="upload-box">
+
+                <input
+                    type="file"
+                    id="fileInput"
+                    accept=".csv,.xlsx"
+                >
+
+
+                <button
+                    class="upload-btn"
+                    id="uploadButton"
+                    onclick="uploadDataset()">
+
+                    Upload Dataset
+
+                </button>
+
+
+                <small>
+                    CSV / XLSX • Maximum 10 MB
+                </small>
+
+
+                <div
+                    id="uploadStatus"
+                    class="upload-status">
+                </div>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     FILTERS
+========================================================= -->
+
+<section class="section">
+
+    <div class="section-heading">
+
+        <h2>
+            Dashboard Overview
+        </h2>
+
+        <p>
+            Use filters to focus the analysis on specific
+            regions or product categories.
+        </p>
+
+    </div>
+
+
+    <div class="filter-card">
+
+        <div class="filters">
+
+            <select id="regionFilter">
+
+                <option value="">
+                    All Regions
+                </option>
+
+                <option value="North">
+                    North
+                </option>
+
+                <option value="South">
+                    South
+                </option>
+
+                <option value="East">
+                    East
+                </option>
+
+                <option value="West">
+                    West
+                </option>
+
+            </select>
+
+
+            <select id="categoryFilter">
+
+                <option value="">
+                    All Categories
+                </option>
+
+                <option value="Electronics">
+                    Electronics
+                </option>
+
+                <option value="Furniture">
+                    Furniture
+                </option>
+
+            </select>
+
+
+            <button onclick="applyFilters()">
+                Apply Filters
+            </button>
+
+
+            <button
+                class="reset-btn"
+                onclick="resetFilters()">
+
+                Reset Filters
+
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     KPI SECTION
+========================================================= -->
+
+<section class="section">
+
+    <div class="section-heading">
+
+        <h2>
+            Key Performance Indicators
+        </h2>
+
+        <p>
+            High-level metrics for the currently selected dataset.
+        </p>
+
+    </div>
+
+
+    <div class="kpi-grid">
+
+
+        <div class="kpi-card">
+
+            <div class="kpi-label">
+                Total Sales
+            </div>
+
+            <div
+                class="kpi-value"
+                id="totalSales">
+
+                -
+
+            </div>
+
+            <div class="kpi-subtitle">
+                Overall revenue
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card">
+
+            <div class="kpi-label">
+                Total Profit
+            </div>
+
+            <div
+                class="kpi-value"
+                id="totalProfit">
+
+                -
+
+            </div>
+
+            <div class="kpi-subtitle">
+                Overall profit
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card">
+
+            <div class="kpi-label">
+                Total Orders
+            </div>
+
+            <div
+                class="kpi-value"
+                id="totalOrders">
+
+                -
+
+            </div>
+
+            <div class="kpi-subtitle">
+                Number of orders
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card">
+
+            <div class="kpi-label">
+                Quantity Sold
+            </div>
+
+            <div
+                class="kpi-value"
+                id="totalQuantity">
+
+                -
+
+            </div>
+
+            <div class="kpi-subtitle">
+                Units sold
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card">
+
+            <div class="kpi-label">
+                Average Order Value
+            </div>
+
+            <div
+                class="kpi-value"
+                id="averageOrderValue">
+
+                -
+
+            </div>
+
+            <div class="kpi-subtitle">
+                Revenue per order
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card">
+
+            <div class="kpi-label">
+                Profit Margin
+            </div>
+
+            <div
+                class="kpi-value"
+                id="profitMargin">
+
+                -
+
+            </div>
+
+            <div class="kpi-subtitle">
+                Profit / sales
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card">
+
+            <div class="kpi-label">
+                Average Discount
+            </div>
+
+            <div
+                class="kpi-value"
+                id="averageDiscount">
+
+                -
+
+            </div>
+
+            <div class="kpi-subtitle">
+                Average discount
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card">
+
+            <div class="kpi-label">
+                Top Region
+            </div>
+
+            <div
+                class="kpi-value"
+                id="topRegion">
+
+                -
+
+            </div>
+
+            <div
+                class="kpi-subtitle"
+                id="topRegionSales">
+
+                -
+
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card">
+
+            <div class="kpi-label">
+                Top Category
+            </div>
+
+            <div
+                class="kpi-value"
+                id="topCategory">
+
+                -
+
+            </div>
+
+            <div
+                class="kpi-subtitle"
+                id="topCategorySales">
+
+                -
+
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card">
+
+            <div class="kpi-label">
+                Top Product
+            </div>
+
+            <div
+                class="kpi-value"
+                id="topProduct">
+
+                -
+
+            </div>
+
+            <div
+                class="kpi-subtitle"
+                id="topProductSales">
+
+                -
+
+            </div>
+
+        </div>
+
+
+        <div class="kpi-card">
+
+            <div class="kpi-label">
+                Top Profit Product
+            </div>
+
+            <div
+                class="kpi-value"
+                id="topProfitProduct">
+
+                -
+
+            </div>
+
+            <div
+                class="kpi-subtitle"
+                id="topProfitProductValue">
+
+                -
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     CHARTS
+========================================================= -->
+
+<section class="section">
+
+    <div class="section-heading">
+
+        <h2>
+            Business Performance
+        </h2>
+
+        <p>
+            Visual analysis of sales, products, categories,
+            regions and monthly trends.
+        </p>
+
+    </div>
+
+
+    <div class="chart-grid">
+
+
+        <div class="chart-card">
+
+            <h3>
+                Sales by Region
+            </h3>
+
+            <p>
+                Compare revenue generated across regions.
+            </p>
+
+            <div
+                id="regionChart"
+                class="chart">
+            </div>
+
+        </div>
+
+
+        <div class="chart-card">
+
+            <h3>
+                Sales by Category
+            </h3>
+
+            <p>
+                Understand category contribution to revenue.
+            </p>
+
+            <div
+                id="categoryChart"
+                class="chart">
+            </div>
+
+        </div>
+
+
+        <div class="chart-card">
+
+            <h3>
+                Sales by Product
+            </h3>
+
+            <p>
+                Identify the strongest revenue-generating products.
+            </p>
+
+            <div
+                id="productChart"
+                class="chart">
+            </div>
+
+        </div>
+
+
+        <div class="chart-card">
+
+            <h3>
+                Regional Performance
+            </h3>
+
+            <p>
+                Compare sales and profit by region.
+            </p>
+
+            <div
+                id="regionPerformanceChart"
+                class="chart">
+            </div>
+
+        </div>
+
+
+        <div
+            class="chart-card"
+            style="grid-column: 1 / -1;">
+
+            <h3>
+                Monthly Sales Trend
+            </h3>
+
+            <p>
+                Track revenue movement over time.
+            </p>
+
+            <div
+                id="monthlyChart"
+                class="chart">
+            </div>
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+<!-- =========================================================
+     AI COPILOT
+========================================================= -->
+
+<section class="section">
+
+    <div class="ai-card">
+
+
+        <div class="ai-title">
+
+            <div class="ai-icon">
+                AI
+            </div>
+
+            <h2>
+                Ask Your Data
+            </h2>
+
+        </div>
+
+
+        <p class="ai-description">
+
+            Ask a business question in natural language.
+            The Copilot generates SQL, retrieves the relevant
+            data, creates a visualization and produces
+            business-focused insights.
+
+        </p>
+
+
+        <div class="question-row">
+
+            <input
+                type="text"
+                id="questionInput"
+                placeholder="e.g. Which region generated the highest sales?"
+            >
+
+
+            <button
+                class="ask-btn"
+                onclick="askQuestion()">
+
+                Ask AI
+
+            </button>
+
+        </div>
+
+
+        <div class="examples-title">
+            Try an example:
+        </div>
+
+
+        <div class="examples">
+
+
+            <div
+                class="example"
+                onclick="setQuestion('Which region generated the highest sales?')">
+
+                Highest sales region
+
+            </div>
+
+
+            <div
+                class="example"
+                onclick="setQuestion('Which product generated the highest profit?')">
+
+                Highest profit product
+
+            </div>
+
+
+            <div
+                class="example"
+                onclick="setQuestion('What is the total sales by category?')">
+
+                Sales by category
+
+            </div>
+
+
+            <div
+                class="example"
+                onclick="setQuestion('Which region has the best profit margin?')">
+
+                Best profit margin
+
+            </div>
+
+
+            <div
+                class="example"
+                onclick="setQuestion('Show monthly sales trend')">
+
+                Monthly trend
+
+            </div>
+
+
+        </div>
+
+
+        <div id="status"></div>
+
+
+        <!-- =================================================
+             AI RESULTS
+        ================================================== -->
+
+        <div id="aiResult">
+
+
+            <div class="result-block">
+
+                <div class="result-heading">
+                    Generated SQL
+                </div>
+
+                <div
+                    id="generatedSQL"
+                    class="sql-box">
+                </div>
+
+            </div>
+
+
+            <div class="result-block">
+
+                <div class="result-heading">
+                    Query Results
+                </div>
+
+                <div
+                    id="resultTable"
+                    class="table-container">
+                </div>
+
+            </div>
+
+
+            <div
+                id="aiChartContainer"
+                class="result-block">
+
+                <div class="result-heading">
+                    Visual Analysis
+                </div>
+
+                <div id="aiChart"></div>
+
+            </div>
+
+
+            <div class="result-block">
+
+                <div class="result-heading">
+                    Business Insights
+                </div>
+
+
+                <div class="insight-grid">
+
+
+                    <div
+                        class="insight-card summary-card">
+
+                        <h3>
+                            Summary
+                        </h3>
+
+                        <p id="summaryInsight">
+                            -
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="insight-card finding-card">
+
+                        <h3>
+                            Key Finding
+                        </h3>
+
+                        <p id="findingInsight">
+                            -
+                        </p>
+
+                    </div>
+
+
+                    <div
+                        class="insight-card recommendation-card">
+
+                        <h3>
+                            Recommendation
+                        </h3>
+
+                        <p id="recommendationInsight">
+                            -
+                        </p>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+    </div>
+
+</section>
+
+
+</div>
+
+
+<!-- =========================================================
+     FOOTER
+========================================================= -->
+
+<footer>
+
+    AI Business Analytics Copilot
+    •
+    Python
+    •
+    Flask
+    •
+    SQL
+    •
+    Pandas
+    •
+    Plotly
+    •
+    Gemini AI
+
+</footer>
+
+
+<script>
+
+/* ============================================================
+   FILTER STATE
+============================================================ */
+
+let currentRegion = "";
+
+let currentCategory = "";
+
+
+/* ============================================================
+   CURRENCY FORMAT
+============================================================ */
+
+function formatCurrency(value) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "-";
+    }
+
+    return "₹" +
+        Number(value).toLocaleString(
+            "en-IN",
+            {
+                maximumFractionDigits: 2
+            }
+        );
+
+}
+
+
+/* ============================================================
+   NUMBER FORMAT
+============================================================ */
+
+function formatNumber(value) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "-";
+    }
+
+    return Number(value).toLocaleString(
+        "en-IN",
+        {
+            maximumFractionDigits: 2
+        }
+    );
+
+}
+
+
+/* ============================================================
+   LOAD KPIs
+============================================================ */
+
+async function loadKPIs() {
+
+    try {
+
+        const params =
+            new URLSearchParams();
+
+
+        if (currentRegion) {
+
+            params.append(
+                "region",
+                currentRegion
+            );
+
+        }
+
+
+        if (currentCategory) {
+
+            params.append(
+                "category",
+                currentCategory
+            );
+
+        }
+
+
+        const response =
+            await fetch(
+                "/api/kpis?" +
+                params.toString()
+            );
+
+
+        const data =
+            await response.json();
+
+
+        document.getElementById(
+            "totalSales"
+        ).innerText =
+            formatCurrency(
+                data.total_sales
+            );
+
+
+        document.getElementById(
+            "totalProfit"
+        ).innerText =
+            formatCurrency(
+                data.total_profit
+            );
+
+
+        document.getElementById(
+            "totalOrders"
+        ).innerText =
+            formatNumber(
+                data.total_orders
+            );
+
+
+        document.getElementById(
+            "totalQuantity"
+        ).innerText =
+            formatNumber(
+                data.total_quantity
+            );
+
+
+        document.getElementById(
+            "averageOrderValue"
+        ).innerText =
+            formatCurrency(
+                data.average_order_value
+            );
+
+
+        document.getElementById(
+            "profitMargin"
+        ).innerText =
+            formatNumber(
+                data.profit_margin
+            ) + "%";
+
+
+        document.getElementById(
+            "averageDiscount"
+        ).innerText =
+            formatNumber(
+                data.average_discount
+            ) + "%";
+
+
+        document.getElementById(
+            "topRegion"
+        ).innerText =
+            data.top_region || "-";
+
+
+        document.getElementById(
+            "topRegionSales"
+        ).innerText =
+            data.top_region_sales !== undefined
+                ? formatCurrency(
+                    data.top_region_sales
+                )
+                : "-";
+
+
+        document.getElementById(
+            "topCategory"
+        ).innerText =
+            data.top_category || "-";
+
+
+        document.getElementById(
+            "topCategorySales"
+        ).innerText =
+            data.top_category_sales !== undefined
+                ? formatCurrency(
+                    data.top_category_sales
+                )
+                : "-";
+
+
+        document.getElementById(
+            "topProduct"
+        ).innerText =
+            data.top_product || "-";
+
+
+        document.getElementById(
+            "topProductSales"
+        ).innerText =
+            data.top_product_sales !== undefined
+                ? formatCurrency(
+                    data.top_product_sales
+                )
+                : "-";
+
+
+        document.getElementById(
+            "topProfitProduct"
+        ).innerText =
+            data.top_profit_product || "-";
+
+
+        document.getElementById(
+            "topProfitProductValue"
+        ).innerText =
+            data.top_profit_product_value !== undefined
+                ? formatCurrency(
+                    data.top_profit_product_value
+                )
+                : "-";
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "KPI error:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   LOAD DASHBOARD
+============================================================ */
+
+async function loadDashboard() {
+
+    try {
+
+        const params =
+            new URLSearchParams();
+
+
+        if (currentRegion) {
+
+            params.append(
+                "region",
+                currentRegion
+            );
+
+        }
+
+
+        if (currentCategory) {
+
+            params.append(
+                "category",
+                currentCategory
+            );
+
+        }
+
+
+        const response =
+            await fetch(
+                "/api/dashboard?" +
+                params.toString()
+            );
+
+
+        const data =
+            await response.json();
+
+
+        /* REGION */
+
+        Plotly.newPlot(
+            "regionChart",
+            [{
+                x: data.region.labels,
+                y: data.region.values,
+                type: "bar"
+            }],
+            {
+                margin: {
+                    t: 15,
+                    r: 15,
+                    b: 50,
+                    l: 60
+                },
+                paper_bgcolor: "white",
+                plot_bgcolor: "white"
+            },
+            {
+                responsive: true,
+                displayModeBar: false
+            }
+        );
+
+
+        /* CATEGORY */
+
+        Plotly.newPlot(
+            "categoryChart",
+            [{
+                labels: data.category.labels,
+                values: data.category.values,
+                type: "pie"
+            }],
+            {
+                margin: {
+                    t: 15,
+                    r: 15,
+                    b: 15,
+                    l: 15
+                },
+                paper_bgcolor: "white"
+            },
+            {
+                responsive: true,
+                displayModeBar: false
+            }
+        );
+
+
+        /* PRODUCT */
+
+        Plotly.newPlot(
+            "productChart",
+            [{
+                x: data.product.labels,
+                y: data.product.values,
+                type: "bar"
+            }],
+            {
+                margin: {
+                    t: 15,
+                    r: 15,
+                    b: 80,
+                    l: 60
+                },
+                paper_bgcolor: "white",
+                plot_bgcolor: "white"
+            },
+            {
+                responsive: true,
+                displayModeBar: false
+            }
+        );
+
+
+        /* REGIONAL PERFORMANCE */
+
+        Plotly.newPlot(
+            "regionPerformanceChart",
+            [
+                {
+                    x: data.region_performance.labels,
+                    y: data.region_performance.sales,
+                    name: "Sales",
+                    type: "bar"
+                },
+                {
+                    x: data.region_performance.labels,
+                    y: data.region_performance.profit,
+                    name: "Profit",
+                    type: "bar"
+                }
+            ],
+            {
+                barmode: "group",
+                margin: {
+                    t: 15,
+                    r: 15,
+                    b: 50,
+                    l: 60
+                },
+                paper_bgcolor: "white",
+                plot_bgcolor: "white"
+            },
+            {
+                responsive: true,
+                displayModeBar: false
+            }
+        );
+
+
+        /* MONTHLY */
+
+        Plotly.newPlot(
+            "monthlyChart",
+            [{
+                x: data.monthly.labels,
+                y: data.monthly.values,
+                type: "scatter",
+                mode: "lines+markers"
+            }],
+            {
+                margin: {
+                    t: 15,
+                    r: 15,
+                    b: 50,
+                    l: 60
+                },
+                paper_bgcolor: "white",
+                plot_bgcolor: "white"
+            },
+            {
+                responsive: true,
+                displayModeBar: false
+            }
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Dashboard error:",
+            error
+        );
+
+    }
+
+}
+
+
+/* ============================================================
+   APPLY FILTERS
+============================================================ */
+
+function applyFilters() {
+
+    currentRegion =
+        document.getElementById(
+            "regionFilter"
+        ).value;
+
+
+    currentCategory =
+        document.getElementById(
+            "categoryFilter"
+        ).value;
+
+
+    loadKPIs();
+
+    loadDashboard();
+
+}
+
+
+/* ============================================================
+   RESET FILTERS
+============================================================ */
+
+function resetFilters() {
+
+    document.getElementById(
+        "regionFilter"
+    ).value = "";
+
+
+    document.getElementById(
+        "categoryFilter"
+    ).value = "";
+
+
+    currentRegion = "";
+
+    currentCategory = "";
+
+
+    loadKPIs();
+
+    loadDashboard();
+
+}
+
+
+/* ============================================================
+   UPLOAD STATUS
+============================================================ */
+
+function showUploadStatus(
+    message,
+    type
+) {
+
+    const status =
+        document.getElementById(
+            "uploadStatus"
+        );
+
+
+    status.className =
+        "upload-status";
+
+
+    if (type === "success") {
+
+        status.classList.add(
+            "upload-success"
+        );
+
+    }
+
+
+    if (type === "error") {
+
+        status.classList.add(
+            "upload-error"
+        );
+
+    }
+
+
+    status.innerText =
+        message;
+
+
+    status.style.display =
+        "block";
+
+}
+
+
+/* ============================================================
+   UPLOAD DATASET
+============================================================ */
+
+async function uploadDataset() {
+
+    const fileInput =
+        document.getElementById(
+            "fileInput"
+        );
+
+
+    const uploadButton =
+        document.getElementById(
+            "uploadButton"
+        );
+
+
+    const file =
+        fileInput.files[0];
+
+
+    if (!file) {
+
+        showUploadStatus(
+            "Please select a CSV or Excel file first.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const filename =
+        file.name.toLowerCase();
+
+
+    if (
+        !filename.endsWith(".csv") &&
+        !filename.endsWith(".xlsx")
+    ) {
+
+        showUploadStatus(
+            "Only CSV and Excel (.xlsx) files are supported.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    if (
+        file.size >
+        10 * 1024 * 1024
+    ) {
+
+        showUploadStatus(
+            "File is too large. Maximum size is 10 MB.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    uploadButton.disabled = true;
+
+    uploadButton.innerText =
+        "Processing...";
+
+
+    showUploadStatus(
+        "Uploading and processing dataset...",
+        "info"
+    );
+
+
+    try {
+
+        const formData =
+            new FormData();
+
+
+        formData.append(
+            "file",
+            file
+        );
+
+
+        const response =
+            await fetch(
+                "/api/upload",
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                "Upload failed."
+            );
+
+        }
+
+
+        showUploadStatus(
+            `Dataset uploaded successfully — ${data.records} records loaded.`,
+            "success"
+        );
+
+
+        resetFilters();
+
+
+        document.getElementById(
+            "aiResult"
+        ).style.display =
+            "none";
+
+
+        document.getElementById(
+            "questionInput"
+        ).value = "";
+
+
+        fileInput.value = "";
+
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "Upload error:",
+            error
+        );
+
+
+        showUploadStatus(
+            error.message ||
+            "Unable to upload dataset.",
+            "error"
+        );
+
+    }
+
+    finally {
+
+        uploadButton.disabled = false;
+
+        uploadButton.innerText =
+            "Upload Dataset";
+
+    }
+
+}
+
+
+/* ============================================================
+   SET QUESTION
+============================================================ */
+
+function setQuestion(question) {
+
+    document.getElementById(
+        "questionInput"
+    ).value =
+        question;
+
+
+    document.getElementById(
+        "questionInput"
+    ).focus();
+
+}
+
+
+/* ============================================================
+   SHOW STATUS
+============================================================ */
+
+function showStatus(
+    message,
+    loading = false
+) {
+
+    const status =
+        document.getElementById(
+            "status"
+        );
+
+
+    status.style.display =
+        "block";
+
+
+    status.className = "";
+
+
+    if (loading) {
+
+        status.innerHTML = `
+
+            <div class="loading">
+
+                <div class="spinner"></div>
+
+                <span>
+                    ${message}
+                </span>
+
+            </div>
+
+        `;
+
+    }
+
+    else {
+
+        status.innerText =
+            message;
+
+    }
+
+}
+
+
+/* ============================================================
+   HIDE STATUS
+============================================================ */
+
+function hideStatus() {
+
+    document.getElementById(
+        "status"
+    ).style.display =
+        "none";
+
+}
+
+
+/* ============================================================
+   RESULT TABLE
+============================================================ */
+
+function createResultTable(results) {
+
+    const container =
+        document.getElementById(
+            "resultTable"
+        );
+
+
+    container.innerHTML = "";
+
+
+    if (
+        !results ||
+        results.length === 0
+    ) {
+
+        container.innerHTML = `
+
+            <div style="
+                padding:20px;
+                text-align:center;
+                color:#64748b;
+                font-size:12px;
+            ">
+
+                No data returned for this question.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    const table =
+        document.createElement(
+            "table"
+        );
+
+
+    const thead =
+        document.createElement(
+            "thead"
+        );
+
+
+    const tbody =
+        document.createElement(
+            "tbody"
+        );
+
+
+    const headers =
+        Object.keys(
+            results[0]
+        );
+
+
+    const headerRow =
+        document.createElement(
+            "tr"
+        );
+
+
+    headers.forEach(
+        header => {
+
+            const th =
+                document.createElement(
+                    "th"
+                );
+
+
+            th.innerText =
+                header;
+
+
+            headerRow.appendChild(
+                th
+            );
+
+        }
+    );
+
+
+    thead.appendChild(
+        headerRow
+    );
+
+
+    results.forEach(
+        row => {
+
+            const tr =
+                document.createElement(
+                    "tr"
+                );
+
+
+            headers.forEach(
+                header => {
+
+                    const td =
+                        document.createElement(
+                            "td"
+                        );
+
+
+                    const value =
+                        row[header];
+
+
+                    if (
+                        typeof value === "number" &&
+                        (
+                            header
+                                .toLowerCase()
+                                .includes("sales") ||
+
+                            header
+                                .toLowerCase()
+                                .includes("profit") ||
+
+                            header
+                                .toLowerCase()
+                                .includes("revenue")
+                        )
+                    ) {
+
+                        td.innerText =
+                            formatCurrency(
+                                value
+                            );
+
+                    }
+
+                    else {
+
+                        td.innerText =
+                            value ?? "";
+
+                    }
+
+
+                    tr.appendChild(
+                        td
+                    );
+
+                }
+            );
+
+
+            tbody.appendChild(
+                tr
+            );
+
+        }
+    );
+
+
+    table.appendChild(
+        thead
+    );
+
+
+    table.appendChild(
+        tbody
+    );
+
+
+    container.appendChild(
+        table
+    );
+
+}
+
+
+/* ============================================================
+   AI CHART
+============================================================ */
+
+function createAIChart(results) {
+
+    const chartContainer =
+        document.getElementById(
+            "aiChartContainer"
+        );
+
+
+    const chart =
+        document.getElementById(
+            "aiChart"
+        );
+
+
+    chart.innerHTML = "";
+
+    chartContainer.style.display =
+        "none";
+
+
+    if (
+        !results ||
+        results.length === 0
+    ) {
+
+        return;
+
+    }
+
+
+    const columns =
+        Object.keys(
+            results[0]
+        );
+
+
+    let numericColumn = null;
+
+    let labelColumn = null;
+
+
+    for (
+        const column of columns
+    ) {
+
+        if (
+            typeof results[0][column] ===
+            "number"
+        ) {
+
+            numericColumn =
+                column;
+
+            break;
+
+        }
+
+    }
+
+
+    for (
+        const column of columns
+    ) {
+
+        if (
+            typeof results[0][column] ===
+            "string"
+        ) {
+
+            labelColumn =
+                column;
+
+            break;
+
+        }
+
+    }
+
+
+    if (!numericColumn) {
+
+        return;
+
+    }
+
+
+    const labels =
+        labelColumn
+            ? results.map(
+                row => row[labelColumn]
+            )
+            : results.map(
+                (_, index) => index + 1
+            );
+
+
+    const values =
+        results.map(
+            row => row[numericColumn]
+        );
+
+
+    let isTimeSeries = false;
+
+
+    if (
+        labelColumn &&
+        (
+            labelColumn
+                .toLowerCase()
+                .includes("month") ||
+
+            labelColumn
+                .toLowerCase()
+                .includes("date")
+        )
+    ) {
+
+        isTimeSeries = true;
+
+    }
+
+
+    const trace = {
+
+        x: labels,
+
+        y: values,
+
+        type:
+            isTimeSeries
+                ? "scatter"
+                : "bar",
+
+        mode:
+            isTimeSeries
+                ? "lines+markers"
+                : undefined
+
+    };
+
+
+    Plotly.newPlot(
+        chart,
+        [trace],
+        {
+
+            title:
+                `${numericColumn} by ${labelColumn || "Record"}`,
+
+            margin: {
+                t: 50,
+                r: 20,
+                b: 70,
+                l: 70
+            },
+
+            paper_bgcolor: "white",
+
+            plot_bgcolor: "white"
+
+        },
+        {
+            responsive: true,
+            displayModeBar: false
+        }
+    );
+
+
+    chartContainer.style.display =
+        "block";
+
+}
+
+
+/* ============================================================
+   ASK AI
+============================================================ */
+
+async function askQuestion() {
+
+    const question =
+        document.getElementById(
+            "questionInput"
+        ).value.trim();
+
+
+    if (!question) {
+
+        showStatus(
+            "Please enter a business question."
+        );
+
+        return;
+
+    }
+
+
+    showStatus(
+        "AI is analyzing your business question...",
+        true
+    );
+
+
+    document.getElementById(
+        "aiResult"
+    ).style.display =
+        "none";
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/analyze",
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        question:
+                            question,
+
+                        region:
+                            currentRegion,
+
+                        category:
+                            currentCategory
+
+                    })
+
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                "Unable to analyze the question."
+            );
+
+        }
+
+
+        document.getElementById(
+            "aiResult"
+        ).style.display =
+            "block";
+
+
+        document.getElementById(
+            "generatedSQL"
+        ).innerText =
+            data.sql ||
+            "No SQL generated.";
+
+
+        createResultTable(
+            data.results
+        );
+
+
+        createAIChart(
+            data.results
+        );
+
+
+        const insight =
+            data.insight || {};
+
+
+        document.getElementById(
+            "summaryInsight"
+        ).innerText =
+            insight.summary ||
+            "No summary available.";
+
+
+        document.getElementById(
+            "findingInsight"
+        ).innerText =
+            insight.key_finding ||
+            "No key finding available.";
+
+
+        document.getElementById(
+            "recommendationInsight"
+        ).innerText =
+            insight.recommendation ||
+            "No recommendation available.";
+
+
+        hideStatus();
+
+
+        document.getElementById(
+            "aiResult"
+        ).scrollIntoView({
+
+            behavior: "smooth",
+
+            block: "start"
+
+        });
+
+    }
+
+    catch (error) {
+
+        console.error(
+            "AI analysis error:",
+            error
+        );
+
+
+        document.getElementById(
+            "aiResult"
+        ).style.display =
+            "none";
+
+
+        showStatus(
+            error.message ||
+            "Something went wrong."
+        );
+
+
+        document.getElementById(
+            "status"
+        ).className =
+            "error-message";
+
+    }
+
+}
+
+
+/* ============================================================
+   ENTER KEY
+============================================================ */
+
+document
+    .getElementById(
+        "questionInput"
+    )
+    .addEventListener(
+        "keydown",
+        function(event) {
+
+            if (
+                event.key === "Enter"
+            ) {
+
+                askQuestion();
+
+            }
+
+        }
+    );
+
+
+/* ============================================================
+   INITIALIZE DASHBOARD
+============================================================ */
+
+loadKPIs();
+
+loadDashboard();
+
+</script>
+
+
+</body>
+
+</html>

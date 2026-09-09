@@ -1,0 +1,17 @@
+Order_ID,Order_Date,Customer,Product,Category,Region,Quantity,Sales,Discount,Profit
+1001,2026-01-05,Customer A,Laptop,Electronics,South,2,120000,0.05,18000
+1002,2026-01-08,Customer B,Phone,Electronics,North,3,90000,0.10,12000
+1003,2026-01-12,Customer C,Chair,Furniture,East,5,25000,0.05,5000
+1004,2026-01-18,Customer D,Desk,Furniture,West,2,30000,0.00,7000
+1005,2026-02-03,Customer E,Laptop,Electronics,North,1,60000,0.05,9000
+1006,2026-02-07,Customer F,Phone,Electronics,South,4,120000,0.08,16000
+1007,2026-02-15,Customer G,Chair,Furniture,West,8,40000,0.10,7000
+1008,2026-02-21,Customer H,Desk,Furniture,East,3,45000,0.05,10000
+1009,2026-03-02,Customer I,Laptop,Electronics,East,2,120000,0.00,20000
+1010,2026-03-10,Customer J,Phone,Electronics,West,5,150000,0.10,18000
+1011,2026-03-14,Customer K,Chair,Furniture,North,6,30000,0.05,6000
+1012,2026-03-22,Customer L,Desk,Furniture,South,4,60000,0.08,11000
+1013,2026-04-04,Customer M,Laptop,Electronics,South,3,180000,0.05,27000
+1014,2026-04-11,Customer N,Phone,Electronics,North,2,60000,0.05,8000
+1015,2026-04-19,Customer O,Chair,Furniture,East,10,50000,0.10,9000
+1016,2026-04-25,Customer P,Desk,Furniture,West,5,75000,0.05,14000
