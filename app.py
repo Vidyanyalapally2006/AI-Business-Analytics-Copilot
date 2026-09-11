@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import os
 import re
+import time
 from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
@@ -354,11 +355,7 @@ def clean_sql(sql):
 
         sql = sql[4:].strip()
 
-    # Keep only the SQL portion if Gemini
-    # accidentally adds text after it
-    sql = sql.strip()
-
-    return sql
+    return sql.strip()
 
 
 # ============================================================
@@ -437,7 +434,6 @@ def validate_sql(sql):
     # TABLE VALIDATION
     # ========================================================
 
-    # Find tables after FROM and JOIN
     table_matches = re.findall(
         r"""
         \b
@@ -545,6 +541,108 @@ def build_filter_conditions(
         where_clause = ""
 
     return where_clause, parameters
+
+
+# ============================================================
+# GEMINI TRANSIENT ERROR CHECK
+# ============================================================
+
+def is_temporary_gemini_error(error):
+
+    error_text = str(error).lower()
+
+    temporary_errors = [
+        "503",
+        "unavailable",
+        "high demand",
+        "429",
+        "resource exhausted",
+        "rate limit",
+        "too many requests",
+        "deadline exceeded",
+        "timeout",
+        "timed out",
+        "temporarily unavailable"
+    ]
+
+    return any(
+        message in error_text
+        for message in temporary_errors
+    )
+
+
+# ============================================================
+# GEMINI SAFE GENERATION WITH RETRIES
+# ============================================================
+
+def generate_gemini_content(
+    prompt,
+    max_retries=3
+):
+
+    if client is None:
+
+        raise ValueError(
+            "Gemini API is not configured."
+        )
+
+    last_error = None
+
+    for attempt in range(
+        max_retries
+    ):
+
+        try:
+
+            response = client.models.generate_content(
+                model="gemini-3.6-flash",
+                contents=prompt
+            )
+
+            if not response or not response.text:
+
+                raise ValueError(
+                    "Gemini returned an empty response."
+                )
+
+            return response
+
+        except Exception as error:
+
+            last_error = error
+
+            print(
+                f"Gemini attempt {attempt + 1} failed:",
+                error
+            )
+
+            # Retry only temporary errors
+            if not is_temporary_gemini_error(
+                error
+            ):
+
+                raise
+
+            # Do not wait after final attempt
+            if attempt == max_retries - 1:
+
+                break
+
+            # Progressive wait:
+            # 2 seconds → 4 seconds
+            wait_time = 2 ** (
+                attempt + 1
+            )
+
+            print(
+                f"Retrying Gemini in {wait_time} seconds..."
+            )
+
+            time.sleep(
+                wait_time
+            )
+
+    raise last_error
 
 
 # ============================================================
@@ -1012,9 +1110,9 @@ User question:
 {question}
 """
 
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt
+    response = generate_gemini_content(
+        prompt,
+        max_retries=3
     )
 
     return clean_sql(
@@ -1078,9 +1176,9 @@ Rules:
 - Keep each section concise.
 """
 
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=prompt
+    response = generate_gemini_content(
+        prompt,
+        max_retries=3
     )
 
     text = response.text.strip()
@@ -1186,7 +1284,10 @@ def analyze():
 
     try:
 
+        # ----------------------------------------------------
         # Generate SQL
+        # ----------------------------------------------------
+
         sql = generate_sql(
             question,
             region,
@@ -1197,7 +1298,10 @@ def analyze():
             sql
         )
 
+        # ----------------------------------------------------
         # Security validation
+        # ----------------------------------------------------
+
         if not validate_sql(sql):
 
             print(
@@ -1212,7 +1316,10 @@ def analyze():
 
             }), 400
 
+        # ----------------------------------------------------
         # Execute SQL
+        # ----------------------------------------------------
+
         connection = get_connection()
 
         try:
@@ -1226,16 +1333,46 @@ def analyze():
 
             connection.close()
 
+        # ----------------------------------------------------
         # Convert results
+        # ----------------------------------------------------
+
         results = dataframe_to_records(
             result_df
         )
 
-        # Generate insight
-        insight = generate_business_insight(
-            question,
-            results
-        )
+        # ----------------------------------------------------
+        # Generate AI insight
+        # ----------------------------------------------------
+
+        try:
+
+            insight = generate_business_insight(
+                question,
+                results
+            )
+
+        except Exception as insight_error:
+
+            print(
+                "AI insight generation failed:",
+                insight_error
+            )
+
+            # The actual SQL result is still valid.
+            insight = {
+
+                "summary":
+                    "The business query was completed successfully. "
+                    "AI explanation is temporarily unavailable.",
+
+                "key_finding":
+                    "Review the displayed query results for the main business finding.",
+
+                "recommendation":
+                    "Use the displayed results to guide the next business decision."
+
+            }
 
         return jsonify({
 
@@ -1265,6 +1402,37 @@ def analyze():
             "Analysis error:",
             error
         )
+
+        error_text = str(error).lower()
+
+        # Friendly response for temporary Gemini problems
+        if is_temporary_gemini_error(
+            error
+        ):
+
+            return jsonify({
+
+                "error":
+                    "The AI service is temporarily busy. "
+                    "Your data is safe. Please try the question again in a few seconds."
+
+            }), 503
+
+        # Friendly response for configuration problems
+        if (
+            "api key" in error_text
+            or "api_key" in error_text
+            or "authentication" in error_text
+            or "permission" in error_text
+        ):
+
+            return jsonify({
+
+                "error":
+                    "The AI service could not be authenticated. "
+                    "Please check the Gemini API configuration."
+
+            }), 500
 
         return jsonify({
 
