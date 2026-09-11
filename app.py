@@ -9,6 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 
+
 # ============================================================
 # APP CONFIGURATION
 # ============================================================
@@ -29,6 +30,18 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
 
+# Make sure required folders exist
+UPLOAD_FOLDER.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+DB_FILE.parent.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+
 # ============================================================
 # ENVIRONMENT
 # ============================================================
@@ -38,7 +51,9 @@ load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 
 if api_key:
-    client = genai.Client(api_key=api_key)
+    client = genai.Client(
+        api_key=api_key
+    )
 else:
     client = None
 
@@ -66,7 +81,12 @@ REQUIRED_COLUMNS = {
 # ============================================================
 
 def get_connection():
-    return sqlite3.connect(DB_FILE)
+
+    connection = sqlite3.connect(
+        DB_FILE
+    )
+
+    return connection
 
 
 # ============================================================
@@ -96,7 +116,9 @@ def make_json_safe(value):
 
 def dataframe_to_records(df):
 
-    records = df.to_dict(orient="records")
+    records = df.to_dict(
+        orient="records"
+    )
 
     safe_records = []
 
@@ -106,9 +128,13 @@ def dataframe_to_records(df):
 
         for key, value in record.items():
 
-            safe_record[key] = make_json_safe(value)
+            safe_record[key] = make_json_safe(
+                value
+            )
 
-        safe_records.append(safe_record)
+        safe_records.append(
+            safe_record
+        )
 
     return safe_records
 
@@ -122,7 +148,10 @@ def allowed_file(filename):
     if not filename:
         return False
 
-    extension = filename.rsplit(".", 1)[-1].lower()
+    extension = filename.rsplit(
+        ".",
+        1
+    )[-1].lower()
 
     return extension in ALLOWED_EXTENSIONS
 
@@ -153,7 +182,9 @@ def clean_column_names(df):
             column
         )
 
-        cleaned_columns.append(column)
+        cleaned_columns.append(
+            column
+        )
 
     df.columns = cleaned_columns
 
@@ -168,14 +199,21 @@ def clean_uploaded_data(df):
 
     df = df.copy()
 
-    df = df.dropna(how="all")
+    # Remove completely empty rows
+    df = df.dropna(
+        how="all"
+    )
 
+    # Remove completely empty columns
     df = df.dropna(
         axis=1,
         how="all"
     )
 
+    # --------------------------------------------------------
     # Strip whitespace from text columns
+    # --------------------------------------------------------
+
     for column in df.select_dtypes(
         include=["object"]
     ).columns:
@@ -186,7 +224,10 @@ def clean_uploaded_data(df):
             .str.strip()
         )
 
+    # --------------------------------------------------------
     # Numeric columns
+    # --------------------------------------------------------
+
     numeric_columns = [
         "Quantity",
         "Sales",
@@ -203,7 +244,10 @@ def clean_uploaded_data(df):
                 errors="coerce"
             )
 
+    # --------------------------------------------------------
     # Date column
+    # --------------------------------------------------------
+
     if "Order_Date" in df.columns:
 
         df["Order_Date"] = pd.to_datetime(
@@ -216,7 +260,10 @@ def clean_uploaded_data(df):
             .dt.strftime("%Y-%m-%d")
         )
 
+    # --------------------------------------------------------
     # Remove incomplete business rows
+    # --------------------------------------------------------
+
     important_columns = [
         "Order_ID",
         "Product",
@@ -256,11 +303,15 @@ def load_uploaded_file(file):
 
     if extension == "csv":
 
-        df = pd.read_csv(file)
+        df = pd.read_csv(
+            file
+        )
 
     elif extension == "xlsx":
 
-        df = pd.read_excel(file)
+        df = pd.read_excel(
+            file
+        )
 
     else:
 
@@ -334,7 +385,7 @@ def clean_sql(sql):
     if not sql:
         return ""
 
-    sql = sql.strip()
+    sql = str(sql).strip()
 
     # Remove Markdown code fences
     sql = re.sub(
@@ -347,15 +398,21 @@ def clean_sql(sql):
     sql = re.sub(
         r"\s*```$",
         "",
-        sql
+        sql,
+        flags=re.IGNORECASE
     )
 
-    # Remove accidental explanatory prefix
-    if sql.lower().startswith("sql:"):
+    # Remove accidental SQL prefix
+    if sql.lower().startswith(
+        "sql:"
+    ):
 
         sql = sql[4:].strip()
 
-    return sql.strip()
+    # Remove accidental surrounding whitespace
+    sql = sql.strip()
+
+    return sql
 
 
 # ============================================================
@@ -364,34 +421,83 @@ def clean_sql(sql):
 
 def validate_sql(sql):
 
+    """
+    Validate AI-generated SQL before execution.
+
+    Security goals:
+    - SELECT / WITH only
+    - sales table only
+    - no multiple statements
+    - no comments
+    - no database modification
+    - no SQLite internal tables
+    - no dangerous SQLite functions
+    - allow legitimate analytical SQL such as:
+      GROUP BY, ORDER BY, LIMIT, CASE, ROUND,
+      CAST, strftime, subqueries and CTEs.
+    """
+
     if not sql:
         return False
 
-    sql_clean = clean_sql(sql)
+    sql_clean = clean_sql(
+        sql
+    )
 
+    # --------------------------------------------------------
     # Maximum query length
+    # --------------------------------------------------------
+
     if len(sql_clean) > 5000:
         return False
 
+    # --------------------------------------------------------
     # Remove one trailing semicolon
+    # --------------------------------------------------------
+
     if sql_clean.endswith(";"):
 
-        sql_clean = sql_clean[:-1].strip()
+        sql_clean = (
+            sql_clean[:-1]
+            .strip()
+        )
+
+    if not sql_clean:
+        return False
 
     lowered_sql = sql_clean.lower()
 
-    # Only SELECT / WITH queries are allowed
+    # --------------------------------------------------------
+    # Only SELECT / WITH
+    # --------------------------------------------------------
+
     if not (
-        lowered_sql.startswith("select ")
-        or lowered_sql.startswith("with ")
+        lowered_sql.startswith("select")
+        or lowered_sql.startswith("with")
     ):
         return False
 
-    # Prevent multiple statements
+    # Make sure SELECT/WITH is actually a keyword
+    first_keyword_match = re.match(
+        r"^\s*(select|with)\b",
+        lowered_sql,
+        re.IGNORECASE
+    )
+
+    if not first_keyword_match:
+        return False
+
+    # --------------------------------------------------------
+    # Multiple statements
+    # --------------------------------------------------------
+
     if ";" in sql_clean:
         return False
 
-    # Block SQL comments
+    # --------------------------------------------------------
+    # SQL comments
+    # --------------------------------------------------------
+
     if "--" in sql_clean:
         return False
 
@@ -401,7 +507,10 @@ def validate_sql(sql):
     if "*/" in sql_clean:
         return False
 
-    # Dangerous operations
+    # --------------------------------------------------------
+    # Block dangerous SQL keywords
+    # --------------------------------------------------------
+
     dangerous_keywords = [
         "insert",
         "update",
@@ -422,7 +531,11 @@ def validate_sql(sql):
 
     for keyword in dangerous_keywords:
 
-        pattern = r"\b" + re.escape(keyword) + r"\b"
+        pattern = (
+            r"\b"
+            + re.escape(keyword)
+            + r"\b"
+        )
 
         if re.search(
             pattern,
@@ -430,14 +543,70 @@ def validate_sql(sql):
         ):
             return False
 
-    # ========================================================
+    # --------------------------------------------------------
+    # Block SQLite internal tables
+    # --------------------------------------------------------
+
+    blocked_internal_tables = [
+        "sqlite_master",
+        "sqlite_schema",
+        "sqlite_temp_master",
+        "sqlite_sequence"
+    ]
+
+    for table_name in blocked_internal_tables:
+
+        pattern = (
+            r"\b"
+            + re.escape(table_name)
+            + r"\b"
+        )
+
+        if re.search(
+            pattern,
+            lowered_sql
+        ):
+            return False
+
+    # --------------------------------------------------------
+    # Block dangerous SQLite functions
+    # --------------------------------------------------------
+
+    blocked_functions = [
+        "load_extension",
+        "readfile",
+        "writefile"
+    ]
+
+    for function_name in blocked_functions:
+
+        pattern = (
+            r"\b"
+            + re.escape(function_name)
+            + r"\s*\("
+        )
+
+        if re.search(
+            pattern,
+            lowered_sql
+        ):
+            return False
+
+    # --------------------------------------------------------
     # TABLE VALIDATION
-    # ========================================================
+    #
+    # Only FROM sales and JOIN sales are allowed.
+    #
+    # Supports:
+    # FROM sales
+    # FROM "sales"
+    # FROM `sales`
+    # JOIN sales
+    # --------------------------------------------------------
 
     table_matches = re.findall(
         r"""
-        \b
-        (?:FROM|JOIN)
+        \b(?:FROM|JOIN)
         \s+
         (?:
             ["`]
@@ -457,40 +626,48 @@ def validate_sql(sql):
 
     for match in table_matches:
 
-        table = match[0] or match[1]
+        table = (
+            match[0]
+            or match[1]
+        )
 
         if table.lower() not in allowed_tables:
-
             return False
 
-    # Query must reference sales
+    # --------------------------------------------------------
+    # The query must reference sales.
+    #
+    # This also permits CTEs/subqueries that eventually
+    # reference the sales table.
+    # --------------------------------------------------------
+
     if not re.search(
         r"\bsales\b",
         lowered_sql
     ):
         return False
 
-    # ========================================================
-    # BLOCK SQLITE INTERNAL ACCESS
-    # ========================================================
+    # --------------------------------------------------------
+    # Block suspicious database-object access
+    # --------------------------------------------------------
 
-    blocked_patterns = [
+    suspicious_patterns = [
 
-        r"\bload_extension\s*\(",
+        r"\btemp\b",
 
-        r"\breadfile\s*\(",
+        r"\btemp\.",
 
-        r"\bwritefile\s*\(",
+        r"\bmain\.",
 
-        r"\bsqlite_master\b",
+        r"\btemp\.",
 
-        r"\bsqlite_schema\b",
+        r"\battach\b",
 
-        r"\bsqlite_temp_master\b"
+        r"\bdetach\b"
 
     ]
 
-    for pattern in blocked_patterns:
+    for pattern in suspicious_patterns:
 
         if re.search(
             pattern,
@@ -519,7 +696,9 @@ def build_filter_conditions(
             "Region = ?"
         )
 
-        parameters.append(region)
+        parameters.append(
+            region
+        )
 
     if category:
 
@@ -527,29 +706,40 @@ def build_filter_conditions(
             "Category = ?"
         )
 
-        parameters.append(category)
+        parameters.append(
+            category
+        )
 
     if conditions:
 
         where_clause = (
             " WHERE "
-            + " AND ".join(conditions)
+            + " AND ".join(
+                conditions
+            )
         )
 
     else:
 
         where_clause = ""
 
-    return where_clause, parameters
+    return (
+        where_clause,
+        parameters
+    )
 
 
 # ============================================================
 # GEMINI TRANSIENT ERROR CHECK
 # ============================================================
 
-def is_temporary_gemini_error(error):
+def is_temporary_gemini_error(
+    error
+):
 
-    error_text = str(error).lower()
+    error_text = str(
+        error
+    ).lower()
 
     temporary_errors = [
         "503",
@@ -562,7 +752,8 @@ def is_temporary_gemini_error(error):
         "deadline exceeded",
         "timeout",
         "timed out",
-        "temporarily unavailable"
+        "temporarily unavailable",
+        "service unavailable"
     ]
 
     return any(
@@ -599,7 +790,10 @@ def generate_gemini_content(
                 contents=prompt
             )
 
-            if not response or not response.text:
+            if (
+                not response
+                or not response.text
+            ):
 
                 raise ValueError(
                     "Gemini returned an empty response."
@@ -616,20 +810,16 @@ def generate_gemini_content(
                 error
             )
 
-            # Retry only temporary errors
+            # Retry only temporary service errors
             if not is_temporary_gemini_error(
                 error
             ):
-
                 raise
 
-            # Do not wait after final attempt
+            # No wait after final attempt
             if attempt == max_retries - 1:
-
                 break
 
-            # Progressive wait:
-            # 2 seconds → 4 seconds
             wait_time = 2 ** (
                 attempt + 1
             )
@@ -730,7 +920,10 @@ def get_kpis():
     )
 
     profit_margin = (
-        (total_profit / total_sales) * 100
+        (
+            total_profit
+            / total_sales
+        ) * 100
         if total_sales > 0
         else 0
     )
@@ -742,25 +935,33 @@ def get_kpis():
     region_sales = (
         df.groupby("Region")["Sales"]
         .sum()
-        .sort_values(ascending=False)
+        .sort_values(
+            ascending=False
+        )
     )
 
     category_sales = (
         df.groupby("Category")["Sales"]
         .sum()
-        .sort_values(ascending=False)
+        .sort_values(
+            ascending=False
+        )
     )
 
     product_sales = (
         df.groupby("Product")["Sales"]
         .sum()
-        .sort_values(ascending=False)
+        .sort_values(
+            ascending=False
+        )
     )
 
     product_profit = (
         df.groupby("Product")["Profit"]
         .sum()
-        .sort_values(ascending=False)
+        .sort_values(
+            ascending=False
+        )
     )
 
     return jsonify({
@@ -778,51 +979,73 @@ def get_kpis():
             int(total_quantity),
 
         "average_order_value":
-            float(average_order_value),
+            float(
+                average_order_value
+            ),
 
         "profit_margin":
-            float(profit_margin),
+            float(
+                profit_margin
+            ),
 
         "average_discount":
-            float(average_discount),
+            float(
+                average_discount
+            ),
 
         "top_region":
-            str(region_sales.index[0])
+            str(
+                region_sales.index[0]
+            )
             if not region_sales.empty
             else "-",
 
         "top_region_sales":
-            float(region_sales.iloc[0])
+            float(
+                region_sales.iloc[0]
+            )
             if not region_sales.empty
             else 0,
 
         "top_category":
-            str(category_sales.index[0])
+            str(
+                category_sales.index[0]
+            )
             if not category_sales.empty
             else "-",
 
         "top_category_sales":
-            float(category_sales.iloc[0])
+            float(
+                category_sales.iloc[0]
+            )
             if not category_sales.empty
             else 0,
 
         "top_product":
-            str(product_sales.index[0])
+            str(
+                product_sales.index[0]
+            )
             if not product_sales.empty
             else "-",
 
         "top_product_sales":
-            float(product_sales.iloc[0])
+            float(
+                product_sales.iloc[0]
+            )
             if not product_sales.empty
             else 0,
 
         "top_profit_product":
-            str(product_profit.index[0])
+            str(
+                product_profit.index[0]
+            )
             if not product_profit.empty
             else "-",
 
         "top_profit_product_value":
-            float(product_profit.iloc[0])
+            float(
+                product_profit.iloc[0]
+            )
             if not product_profit.empty
             else 0
 
@@ -901,29 +1124,55 @@ def dashboard():
 
         })
 
+    # --------------------------------------------------------
+    # Region
+    # --------------------------------------------------------
+
     region_data = (
         df.groupby("Region")["Sales"]
         .sum()
-        .sort_values(ascending=False)
+        .sort_values(
+            ascending=False
+        )
     )
+
+    # --------------------------------------------------------
+    # Category
+    # --------------------------------------------------------
 
     category_data = (
         df.groupby("Category")["Sales"]
         .sum()
-        .sort_values(ascending=False)
+        .sort_values(
+            ascending=False
+        )
     )
+
+    # --------------------------------------------------------
+    # Product
+    # --------------------------------------------------------
 
     product_data = (
         df.groupby("Product")["Sales"]
         .sum()
-        .sort_values(ascending=False)
+        .sort_values(
+            ascending=False
+        )
     )
+
+    # --------------------------------------------------------
+    # Regional performance
+    # --------------------------------------------------------
 
     performance = (
         df.groupby("Region")
         [["Sales", "Profit"]]
         .sum()
     )
+
+    # --------------------------------------------------------
+    # Monthly trend
+    # --------------------------------------------------------
 
     df["Order_Date"] = pd.to_datetime(
         df["Order_Date"],
@@ -1048,25 +1297,35 @@ def generate_sql(
     if region:
 
         filter_instruction += (
-            f"\nThe dashboard is currently filtered "
-            f"to Region = '{region}'. "
-            f"Respect this filter."
+            f"""
+The dashboard is currently filtered to:
+Region = '{region}'
+
+You MUST respect this active filter.
+"""
         )
 
     if category:
 
         filter_instruction += (
-            f"\nThe dashboard is currently filtered "
-            f"to Category = '{category}'. "
-            f"Respect this filter."
+            f"""
+The dashboard is currently filtered to:
+Category = '{category}'
+
+You MUST respect this active filter.
+"""
         )
 
     prompt = f"""
-You are an expert business data analyst.
+You are the SQL generation engine of an AI Business Analytics application.
 
-Generate ONE SQLite SQL query to answer the user's business question.
+Your task is to convert the user's natural-language business question
+into ONE safe, valid SQLite query.
 
-Database table:
+DATABASE
+========
+
+Table:
 sales
 
 Columns:
@@ -1081,32 +1340,126 @@ Sales
 Discount
 Profit
 
-Rules:
+
+IMPORTANT SQL RULES
+===================
 
 1. Return ONLY the SQL query.
-2. The query must be SELECT or WITH.
-3. Use ONLY the sales table.
-4. Never modify the database.
-5. Never use INSERT, UPDATE, DELETE, DROP, ALTER, CREATE,
-   PRAGMA, ATTACH, DETACH, REPLACE, VACUUM, REINDEX,
-   TRANSACTION, COMMIT, or ROLLBACK.
-6. Do not use SQL comments.
-7. Do not use multiple SQL statements.
-8. Use SQLite-compatible syntax.
-9. Answer the business question directly.
-10. Use clear column aliases.
-11. If aggregation is needed, use GROUP BY.
-12. If ranking is needed, use ORDER BY and LIMIT.
-13. If percentages or margins are requested, calculate them
-    from actual Sales and Profit values.
-14. Do not invent columns.
-15. Do not invent data.
-16. Respect active dashboard filters.
-17. Do not wrap the SQL in Markdown code fences.
+2. Do NOT return explanations.
+3. Do NOT return Markdown.
+4. Do NOT use ```sql.
+5. The query MUST start with SELECT or WITH.
+6. Use ONLY the sales table.
+7. Never modify data.
+8. Never use INSERT.
+9. Never use UPDATE.
+10. Never use DELETE.
+11. Never use DROP.
+12. Never use ALTER.
+13. Never use CREATE.
+14. Never use PRAGMA.
+15. Never use ATTACH.
+16. Never use DETACH.
+17. Never use REPLACE.
+18. Never use VACUUM.
+19. Never use REINDEX.
+20. Never use TRANSACTION.
+21. Never use COMMIT.
+22. Never use ROLLBACK.
+23. Do not use SQL comments.
+24. Do not use multiple statements.
+25. Use SQLite-compatible syntax.
+26. Do not invent columns.
+27. Do not invent data.
+28. Answer the user's question directly.
+29. Use meaningful column aliases.
+30. Use GROUP BY when aggregation is required.
+31. Use ORDER BY and LIMIT when ranking is required.
+32. Use actual Sales and Profit values for financial calculations.
+33. Respect active dashboard filters.
+
+
+BUSINESS QUESTION SUPPORT
+=========================
+
+You must correctly handle questions about:
+
+- total sales
+- total profit
+- sales by region
+- sales by category
+- sales by product
+- profit by product
+- highest sales region
+- highest profit product
+- lowest sales region
+- best-selling product
+- profit margin
+- average order value
+- quantity sold
+- discounts
+- monthly sales
+- monthly profit
+- sales trends
+- monthly trends
+- category comparisons
+- regional comparisons
+- product comparisons
+- rankings
+- percentages
+- business performance
+
+
+MONTHLY TREND EXAMPLE
+=====================
+
+For a question such as:
+
+"Show monthly sales trend"
+
+a valid query can be:
+
+SELECT
+    strftime('%Y-%m', Order_Date) AS Month,
+    SUM(Sales) AS Total_Sales
+FROM sales
+GROUP BY strftime('%Y-%m', Order_Date)
+ORDER BY Month;
+
+
+DATE HANDLING
+=============
+
+Order_Date contains dates.
+
+For monthly analysis, SQLite strftime() may be used.
+
+Example:
+
+strftime('%Y-%m', Order_Date)
+
+
+FINANCIAL CALCULATIONS
+======================
+
+For profit margin:
+
+(SUM(Profit) * 100.0 / NULLIF(SUM(Sales), 0))
+
+For average order value:
+
+SUM(Sales) * 1.0 / COUNT(DISTINCT Order_ID)
+
+
+ACTIVE FILTERS
+==============
 
 {filter_instruction}
 
-User question:
+
+USER QUESTION
+=============
+
 {question}
 """
 
@@ -1144,23 +1497,28 @@ def generate_business_insight(
 
         }
 
-    result_text = str(results)
+    result_text = str(
+        results
+    )
 
     prompt = f"""
-You are a professional business analyst.
+You are a professional Business Analytics analyst.
 
 The user asked:
+
 {question}
 
 Actual query results:
+
 {result_text}
+
 
 Create a concise business analysis.
 
-Return exactly three sections:
+Return exactly these three sections:
 
 SUMMARY:
-A short explanation of what the data shows.
+A short explanation of what the actual data shows.
 
 KEY FINDING:
 The most important business finding supported by the actual results.
@@ -1168,12 +1526,18 @@ The most important business finding supported by the actual results.
 RECOMMENDATION:
 A practical business recommendation based ONLY on the actual results.
 
-Rules:
+
+IMPORTANT RULES:
+
 - Do not invent numbers.
 - Do not invent trends.
 - Do not make unsupported claims.
-- Use actual data from the results.
+- Use only the actual query results.
 - Keep each section concise.
+- This is an Indian business analytics application.
+- Use Indian Rupee notation (₹) when discussing Sales, Profit,
+  Revenue or other monetary values.
+- Never use $ for the business data.
 """
 
     response = generate_gemini_content(
@@ -1298,11 +1662,18 @@ def analyze():
             sql
         )
 
+        print(
+            "Generated SQL:",
+            repr(sql)
+        )
+
         # ----------------------------------------------------
         # Security validation
         # ----------------------------------------------------
 
-        if not validate_sql(sql):
+        if not validate_sql(
+            sql
+        ):
 
             print(
                 "Rejected SQL:",
@@ -1312,7 +1683,7 @@ def analyze():
             return jsonify({
 
                 "error":
-                    "The generated SQL query failed security validation."
+                    "The AI generated a SQL query that was not accepted by the security validator. Please try the question again."
 
             }), 400
 
@@ -1359,7 +1730,6 @@ def analyze():
                 insight_error
             )
 
-            # The actual SQL result is still valid.
             insight = {
 
                 "summary":
@@ -1403,9 +1773,14 @@ def analyze():
             error
         )
 
-        error_text = str(error).lower()
+        error_text = str(
+            error
+        ).lower()
 
-        # Friendly response for temporary Gemini problems
+        # ----------------------------------------------------
+        # Temporary Gemini problems
+        # ----------------------------------------------------
+
         if is_temporary_gemini_error(
             error
         ):
@@ -1418,7 +1793,10 @@ def analyze():
 
             }), 503
 
-        # Friendly response for configuration problems
+        # ----------------------------------------------------
+        # Gemini configuration problems
+        # ----------------------------------------------------
+
         if (
             "api key" in error_text
             or "api_key" in error_text
@@ -1433,6 +1811,23 @@ def analyze():
                     "Please check the Gemini API configuration."
 
             }), 500
+
+        # ----------------------------------------------------
+        # SQL/database problems
+        # ----------------------------------------------------
+
+        if (
+            "no such table" in error_text
+            or "no such column" in error_text
+            or "syntax error" in error_text
+        ):
+
+            return jsonify({
+
+                "error":
+                    "The generated business query could not be executed against the current dataset."
+
+            }), 400
 
         return jsonify({
 
@@ -1491,19 +1886,30 @@ def upload_file():
 
     try:
 
+        # ----------------------------------------------------
         # Load file
+        # ----------------------------------------------------
+
         df = load_uploaded_file(
             file
         )
 
+        # ----------------------------------------------------
         # Clean column names
+        # ----------------------------------------------------
+
         df = clean_column_names(
             df
         )
 
+        # ----------------------------------------------------
         # Validate structure
+        # ----------------------------------------------------
+
         valid, error_message = (
-            validate_dataset(df)
+            validate_dataset(
+                df
+            )
         )
 
         if not valid:
@@ -1517,12 +1923,18 @@ def upload_file():
 
             }), 400
 
+        # ----------------------------------------------------
         # Clean data
+        # ----------------------------------------------------
+
         df = clean_uploaded_data(
             df
         )
 
+        # ----------------------------------------------------
         # Validate usable records
+        # ----------------------------------------------------
+
         if df.empty:
 
             return jsonify({
@@ -1534,7 +1946,10 @@ def upload_file():
 
             }), 400
 
+        # ----------------------------------------------------
         # Save uploaded file
+        # ----------------------------------------------------
+
         extension = file.filename.rsplit(
             ".",
             1
@@ -1547,7 +1962,9 @@ def upload_file():
 
         saved_path = (
             Path(
-                app.config["UPLOAD_FOLDER"]
+                app.config[
+                    "UPLOAD_FOLDER"
+                ]
             )
             / saved_filename
         )
@@ -1563,7 +1980,10 @@ def upload_file():
                 file.read()
             )
 
+        # ----------------------------------------------------
         # Replace SQLite table
+        # ----------------------------------------------------
+
         save_dataframe_to_database(
             df
         )
@@ -1579,10 +1999,14 @@ def upload_file():
                 file.filename,
 
             "records":
-                int(len(df)),
+                int(
+                    len(df)
+                ),
 
             "columns":
-                list(df.columns)
+                list(
+                    df.columns
+                )
 
         })
 
